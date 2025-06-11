@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Rocks and Minerals Flashcards</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app-container">
+    <aside id="sidebar">
+      <div class="sidebar-header">
+        <h2>Rocks & Minerals</h2>
+      </div>
+      <nav>
+        <ul>
+          <li><button class="nav-btn" data-page="review-setup">Review</button></li>
+          <li><button class="nav-btn" data-page="search">Search</button></li>
+        </ul>
+      </nav>
+    </aside>
+    <main id="main-content">
+      <!-- Review Setup Page -->
+      <section id="review-setup-page" class="page">
+        <div class="page-card">
+          <h1>Start a Review Session</h1>
+          <form id="review-setup-form">
+            <label for="session-count">
+              How many rocks do you want to ID? (Max depends on filter)
+            </label>
+            <input type="number" id="session-count" min="1" placeholder="e.g. 10" />
+            <label for="session-category">Select Categories:</label>
+            <select id="session-category" multiple>
+              <option value="all">All</option>
+              <option value="rock">Rocks</option>
+              <option value="mineral">Minerals</option>
+              <option value="igneous">Igneous Rocks</option>
+              <option value="sedimentary">Sedimentary Rocks</option>
+              <option value="metamorphic">Metamorphic Rocks</option>
+              <option value="index">Metamorphic Index Minerals</option>
+              <option value="silicate">Silicate Family</option>
+              <option value="sulfate">Sulfate Family</option>
+              <option value="mohs">Mohs Hardness Scale</option>
+            </select>
+            <button type="submit" class="primary">Start Session</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- Review Interface Page -->
+      <section id="review-page" class="page" style="display:none;">
+        <div class="page-card">
+          <div class="review-header">
+            <h1>Review</h1>
+            <div id="score-board">
+              <span>✅ <span id="correct-count">0</span></span>
+              <span>❌ <span id="wrong-count">0</span></span>
+            </div>
+          </div>
+          <div id="flashcard-area">
+            <img id="rock-image" src="" alt="Rock or Mineral" class="flashcard-image"/>
+            <div id="tags-row" class="hidden"></div>
+            <button id="toggle-tags-btn" type="button" class="secondary">Show Tags</button>
+            <input type="text" id="guess" placeholder="Enter rock or mineral name" autocomplete="off" />
+            <div id="feedback"></div>
+            <div class="button-group">
+              <button class="primary" id="submit-btn" type="button">Submit</button>
+              <button class="secondary" id="skip-btn" type="button">Skip</button>
+              <button class="secondary" id="hint-btn" type="button">Hint</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Summary Page -->
+      <section id="summary-page" class="page" style="display:none;">
+        <div class="page-card">
+          <h1>Session Summary</h1>
+          <div id="summary-list"></div>
+          <button id="restart-btn" class="primary">Restart Session</button>
+        </div>
+      </section>
+
+      <!-- Search Page -->
+      <section id="search-page" class="page" style="display:none;">
+        <div class="page-card">
+          <h1>Search Flashcards</h1>
+          <input type="text" id="search-bar" placeholder="Type to search rocks/minerals..."/>
+          <div id="search-results"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="index.js"></script>
+</body>
+</html>
