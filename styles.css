@@ -51,9 +51,14 @@ aside#sidebar {
   box-shadow: var(--sidebar-shadow);
   margin: 0;
   padding: var(--sidebar-padding);
-  position: relative;
+  position: fixed;
   z-index: 20;
 }
+
+#main-content {
+  margin-left: 220px; 
+}
+
 
 .sidebar-header {
   padding: 0 0 28px 32px;

@@ -31,6 +31,8 @@ navBtns.forEach(btn => {
     showPage(btn.dataset.page);
     if (btn.dataset.page === "review-setup") {
       resetSession();
+    } else if (btn.dataset.page === "search") {
+        updateSearchResults();
     }
   });
 });
@@ -54,7 +56,6 @@ document.getElementById("guess").addEventListener("keydown", function(event) {
 
 // ======= Search Logic =======
 document.getElementById("search-bar").addEventListener("input", updateSearchResults);
-
 // ======= Core Functions =======
 function updateScoreBoard() {
   document.getElementById("correct-count").innerText = totalCorrect;
@@ -330,10 +331,12 @@ function updateSearchResults() {
   const query = document.getElementById("search-bar").value.trim().toLowerCase();
   const container = document.getElementById("search-results");
   container.innerHTML = "";
-  if (!query) return;
-  const matches = rockTypes.filter(rock =>
-    rock.name.toLowerCase().includes(query)
-  );
+  const matches = query === ""
+    ? rockTypes
+    : rockTypes.filter(rock =>
+        rock.name.toLowerCase().includes(query)
+    );
+
   if (matches.length === 0) {
     container.innerHTML = '<p style="color:#ce2626;margin-top:8px;">No results found.</p>';
     return;
