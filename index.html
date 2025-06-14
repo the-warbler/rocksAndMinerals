@@ -61,6 +61,7 @@
             <img id="rock-image" src="" alt="Rock or Mineral" class="flashcard-image"/>
             <div id="tags-row" class="hidden"></div>
             <button id="toggle-tags-btn" type="button" class="secondary">Show Tags</button>
+            <button id="field-notes-btn" type="button" class="secondary">Field Notes</button>
             <input type="text" id="guess" placeholder="Enter rock or mineral name" autocomplete="off" />
             <div id="feedback"></div>
             <div class="button-group">
@@ -90,6 +91,13 @@
         </div>
       </section>
     </main>
+  </div>
+    <div id="modal-overlay" class="hidden">
+    <div id="modal-content">
+      <button id="modal-close">&times;</button>
+      <h2 id="modal-title"></h2>
+      <p id="modal-body"></p>
+    </div>
   </div>
   <script src="index.js"></script>
 </body>

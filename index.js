@@ -3,9 +3,18 @@ let sessionQueue = [];
 let totalCorrect = 0;
 let totalWrong = 0;
 let sessionSummary = [];
-const numImagesPerRock = 2;
 let showTags = false;
 let currentPage = "review-setup";
+let imageCounts = {};
+fetch('images.json')
+  .then(r => r.json())
+  .then(json => {
+    imageCounts = json;
+  })
+  .catch(err => {
+    console.warn('Could not load images.json, defaulting to 1 image each', err);
+  });
+
 
 // ======= DOM Elements =======
 const pages = {
@@ -15,6 +24,39 @@ const pages = {
   "search": document.getElementById("search-page"),
 };
 const navBtns = document.querySelectorAll(".nav-btn");
+
+// ------ Field Notes Modal Logic ------
+const modalOverlay = document.getElementById("modal-overlay");
+const modalTitle   = document.getElementById("modal-title");
+const modalBody    = document.getElementById("modal-body");
+document.getElementById("modal-close").onclick = () => {
+  modalOverlay.classList.add("hidden");
+};
+
+// Show the modal, given a title and text:
+function showFieldNotes(title, notes) {
+  if (title) {
+    modalTitle.innerText = title;
+    modalTitle.style.display = "";
+  } else {
+    modalTitle.style.display = "none";
+  }
+  modalBody.innerText = notes;
+  modalOverlay.classList.remove("hidden");
+}
+
+// Close modal when clicking outside the content
+modalOverlay.addEventListener("click", e => {
+  // if the click is directly on the overlay (not inside the modal-content)
+  if (e.target === modalOverlay) {
+    modalOverlay.classList.add("hidden");
+  }
+});
+
+// Prevent clicks inside the modal-content from bubbling up
+document.getElementById("modal-content")
+        .addEventListener("click", e => e.stopPropagation());
+
 
 // ======= Navigation Logic =======
 function showPage(pageName) {
@@ -53,6 +95,13 @@ document.getElementById("restart-btn").onclick = resetSession;
 document.getElementById("guess").addEventListener("keydown", function(event) {
   if (event.key === "Enter") checkAnswer();
 });
+
+document.getElementById("field-notes-btn").onclick = () => {
+  if (!sessionQueue.length) return;
+  const notes = sessionQueue[0].summary.fieldNotes || "No notes available.";
+  showFieldNotes("", notes);
+};
+
 
 // ======= Search Logic =======
 document.getElementById("search-bar").addEventListener("input", updateSearchResults);
@@ -223,27 +272,38 @@ function startSession() {
   totalCorrect = 0;
   totalWrong = 0;
   updateScoreBoard();
+
+  // Shuffle & pick unique rocks:
   let uniqueRocks = availableRocks.slice();
   uniqueRocks.sort(() => Math.random() - 0.5);
   uniqueRocks = uniqueRocks.slice(0, sessionCount);
+
   uniqueRocks.forEach(rock => {
-    let imgNum = Math.floor(Math.random() * numImagesPerRock) + 1;
-    const summaryEntry = {
-      name: rock.name,
-      image: `images/${rock.name}${imgNum}.jpg`,
-      result: "",
-      type: rock.type || "",
-      category: rock.category || "",
-      mineralFamily: rock.mineralFamily || "",
-      metamorphicIndex: rock.metamorphicIndex || false,
-      mohsRock: rock.mohsRock || false
-    };
-    sessionSummary.push(summaryEntry);
-    sessionQueue.push(createRockInstance(summaryEntry));
+    // How many images does this rock have?
+    const count = imageCounts[rock.name] || 1;
+    // Generate URLs: rockname1.jpg, rockname2.jpg, …
+    for (let i = 1; i <= count; i++) {
+      const imgUrl = `images/${rock.name}${i}.jpg`;
+      const summaryEntry = {
+        name: rock.name,
+        image: imgUrl,
+        result: "",
+        type: rock.type || "",
+        category: rock.category || "",
+        mineralFamily: rock.mineralFamily || "",
+        metamorphicIndex: rock.metamorphicIndex || false,
+        mohsRock: rock.mohsRock || false,
+        fieldNotes: rock.fieldNotes || ""
+      };
+      sessionSummary.push(summaryEntry);
+      sessionQueue.push(createRockInstance(summaryEntry));
+    }
   });
+
+  // Now you have one flashcard per image, for every rock.
   showPage("review");
   showTags = false;
-  document.getElementById("tags-container").style.display = "none";
+  document.getElementById("tags-row").classList.add("hidden");
   document.getElementById("toggle-tags-btn").innerText = "Show Tags";
   loadQuestion();
 }
@@ -251,67 +311,78 @@ function showSummary() {
   showPage("summary");
   const summaryList = document.getElementById("summary-list");
   summaryList.innerHTML = "";
+
   sessionSummary.forEach(entry => {
     const itemDiv = document.createElement("div");
     itemDiv.className = "summary-item";
+
     const imgElem = document.createElement("img");
     imgElem.src = entry.image;
     imgElem.alt = entry.name;
-    // Container for name and tags on one line.
+
+    // Container for name and tags
     const nameTagsDiv = document.createElement("div");
     nameTagsDiv.className = "summary-name-tags";
-    // Bolded name.
-    const nameElem = document.createElement("span");
+
+    // 1) Name button
+    const nameElem = document.createElement("button");
+    nameElem.className = "summary-name-btn";
     nameElem.innerHTML = `<strong>${entry.name}</strong>`;
-    nameTagsDiv.appendChild(nameElem);
-    // Inline tags container.
+    nameElem.onclick = () => {
+      showFieldNotes(entry.name, entry.fieldNotes || "No notes available.");
+    };
+    nameTagsDiv.appendChild(nameElem);  // <-- append the name
+
+    // 2) Inline tags container
     const tagsSpan = document.createElement("span");
     tagsSpan.className = "summary-tags-inline";
-    // Tag for type.
+
     if (entry.type) {
       const typeTag = document.createElement("span");
       typeTag.className = "tag tag-" + entry.type.toLowerCase();
       typeTag.innerText = entry.type;
       tagsSpan.appendChild(typeTag);
     }
-    // Tag for category.
     if (entry.category) {
       const catTag = document.createElement("span");
       catTag.className = "tag tag-" + entry.category.toLowerCase();
       catTag.innerText = entry.category;
       tagsSpan.appendChild(catTag);
     }
-    // Tag for mineral family.
     if (entry.mineralFamily) {
       const famTag = document.createElement("span");
       famTag.className = "tag tag-mineral";
       famTag.innerText = entry.mineralFamily;
       tagsSpan.appendChild(famTag);
     }
-    // Tag for index minerals.
     if (entry.metamorphicIndex) {
       const indexTag = document.createElement("span");
       indexTag.className = "tag tag-index";
       indexTag.innerText = "Index Mineral";
       tagsSpan.appendChild(indexTag);
     }
-    // Tag for Mohs.
     if (entry.mohsRock) {
       const mohsTag = document.createElement("span");
       mohsTag.className = "tag tag-mohs";
       mohsTag.innerText = "Mohs Hardness Scale";
       tagsSpan.appendChild(mohsTag);
     }
-    nameTagsDiv.appendChild(tagsSpan);
+
+    nameTagsDiv.appendChild(tagsSpan); // <-- append the tags
+
+    // Result text
     const resultElem = document.createElement("div");
     resultElem.className = "result-text";
-    resultElem.innerText = entry.result ? entry.result : "N/A";
+    resultElem.innerText = entry.result || "N/A";
+
+    // Assemble
     itemDiv.appendChild(imgElem);
     itemDiv.appendChild(nameTagsDiv);
     itemDiv.appendChild(resultElem);
     summaryList.appendChild(itemDiv);
   });
 }
+
 function resetSession() {
   showPage("review-setup");
   document.getElementById("session-count").value = "";
@@ -350,8 +421,12 @@ function updateSearchResults() {
     imgElem.alt = rock.name;
     const infoDiv = document.createElement("div");
     infoDiv.className = "search-info";
-    const nameElem = document.createElement("strong");
+    const nameElem = document.createElement("button");
+    nameElem.className = "search-name-btn";
     nameElem.innerText = rock.name;
+    nameElem.onclick = () => {
+    showFieldNotes(rock.name, rock.fieldNotes || "No notes available.");
+    };
     infoDiv.appendChild(nameElem);
     // Tags row
     const tagsRow = document.createElement("div");
@@ -394,30 +469,106 @@ function updateSearchResults() {
 }
 
 // ======= ROCKS DATA =======
+function IgneousRock(name, fieldNotes, extra = {}) {
+  return {
+    name,
+    type: "rock",
+    category: "igneous",
+    mineralFamily: null,
+    metamorphicIndex: false,
+    mohsRock: false,
+    fieldNotes,
+    ...extra
+  };
+}
+
+function MetaRock(name, fieldNotes, extra = {}) {
+  return {
+    name,
+    type: "rock",
+    category: "metamorphic",
+    mineralFamily: null,
+    metamorphicIndex: false,
+    mohsRock: false,
+    fieldNotes,
+    ...extra
+  };
+}
+
+function SedRock(name, fieldNotes, extra = {}) {
+  return {
+    name,
+    type: "rock",
+    category: "sedimentary",
+    mineralFamily: null,
+    metamorphicIndex: false,
+    mohsRock: false,
+    fieldNotes,
+    ...extra
+  };
+}
+
+function Mineral(name, extra = {}) {
+  return {
+    name,
+    type: "mineral",
+    category: null,
+    mineralFamily: null,
+    metamorphicIndex: false,
+    mohsRock: false,
+    fieldNotes: "",
+    ...extra
+  };
+}
+
+
+
 const rockTypes = [
-  // IGNEOUS
-  { name: "andesite", type: "rock", category: "igneous" },
-  { name: "basalt", type: "rock", category: "igneous" },
-  { name: "diorite", type: "rock", category: "igneous" },
-  { name: "gabbro", type: "rock", category: "igneous" },
-  { name: "granite", type: "rock", category: "igneous" },
-  { name: "pegmatite", type: "rock", category: "igneous" },
-  { name: "peridotite", type: "rock", category: "igneous" },
-  { name: "rhyolite", type: "rock", category: "igneous", mineralFamily: "silicate" },
-  { name: "scoria", type: "rock", category: "igneous" },
-  // METAMORPHIC
-  { name: "amphibolite", type: "rock", category: "metamorphic" },
-  { name: "gneiss", type: "rock", category: "metamorphic" },
-  { name: "marble", type: "rock", category: "metamorphic", mineralFamily: "carbonate" },
-  { name: "phyllite", type: "rock", category: "metamorphic", mineralFamily: "silicate" },
-  { name: "quartzite", type: "rock", category: "metamorphic" },
-  { name: "schist", type: "rock", category: "metamorphic" },
-  // SEDIMENTARY
-  { name: "bauxite", type: "rock", category: "sedimentary" },
-  { name: "breccia", type: "rock", category: "sedimentary" },
-  { name: "limestone", type: "rock", category: "sedimentary", mineralFamily: "carbonate", metamorphicIndex: false },
-  { name: "shale", type: "rock", category: "sedimentary" },
-  // MINERALS
-  { name: "gypsum", type: "mineral", category: "sedimentary", mineralFamily: "sulfate", mohsRock: true },
-  { name: "quartz", type: "mineral", mineralFamily: "silicate" }
+    // IGNEOUS
+    IgneousRock("andesite", "Fine-grained (aphanitic), gray. Often porphyritic with visible feldspar phenocrysts. Composed mainly of sodium–plagioclase and minor pyroxene/hornblende—intermediate silica (52–63 %)." ),
+    IgneousRock("basalt", "Aphanitic, dark grey to black, mafic with low silica. Dense. May have vesicles; volcanic lava flows."),
+    IgneousRock("diorite", "Coarse‑grained (phaneritic), salt‑and‑pepper grey, composed of plagioclase and hornblende/biotite; intrusive equivalent to andesite."),
+    IgneousRock("gabbro", "Phaneritic, dark (black to dark green), calcium‑rich plagioclase and pyroxene; essentially coarse‑grained, intrusive basalt "),
+    IgneousRock("granite", "Coarse-grained, pink to light gray, felsic, intrusive; abundant quartz and feldspar"),
+    IgneousRock("komatiite", "Ultramafic, coarse spinifex texture, dark green to black, rich in olivine and magnesium; rare Archean lava indicating very hot mantle melts."),
+    IgneousRock("obsidian", "Glassy, aphanitic, conchoidal fracture, jet-black or dark, very high silica—volcanic glass that cooled too fast for crystals."),
+    IgneousRock("pegmatite", "Extremely coarse-grained intrusive rock, often over 1 cm crystals, often light-colored quartz/feldspar/mica; late-stage granitic intrusive veins."),
+    IgneousRock("peridotite", "Coarse-grained ultramafic, greenish-black, abundant olivine; mantle-derived. High density "),
+    IgneousRock("pumice", "Frothy, vesicular, light-colored, low density - volcanic glass from explosive eruptions."),
+    IgneousRock("rhyolite", "Aphanitic to porphyritic, light-colored/pink, felsic; extrusive equivalent of granite.", { mineralFamily: "silicate" }),
+    IgneousRock("scoria", "Coarse vesicular, dark red/brown to black, basaltic composition—densely vesicular, heavier than pumice."),
+    IgneousRock("tuff", "Fine to coarse volcanic ash, often layered, fragmental; may be soft, light-colored; welded or non‑welded pyroclastic rock; can become clay-rich on weathering"),
+
+    // METAMORPHIC
+    MetaRock("amphibolite", "Medium to coarse-grained, dark green to black, plagioclase + hornblende, mafic; non-foliated to weakly foliated, medium–high grade."),
+    MetaRock("gneiss", "Coarse-grained with wavy, alternating light/dark bands ≥5 mm, weak foliation—not easily split but shows compositional layering "),
+    MetaRock("marble", "Medium to coarse crystalline, white to colored, non‑foliated; calcite/dolomite composition—effervesces (bubbles) with acid.", { mineralFamily: "carbonate" }),
+    MetaRock("phyllite", "Fine-grained, foliated with sheen from mica, between slate and schist grade; wavy foliation. Crystals aren't visible.", "Fine-grained, foliated with sheen from mica, between slate and schist grade; wavy foliation. Crystals aren't visible.", { mineralFamily: "silicate" }),
+    MetaRock("quartzite", "Very hard, non‑foliated, interlocking quartz grains, white to grey; from high-grade metamorphism. Parent rock: sandstone"),
+    MetaRock("schist", "Medium-grained, schistosity present—easily split into flakes; abundant mica/platy minerals"),
+    MetaRock("slate", "Very fine-grained, strong slaty cleavage, foliated, usually dark; breaks into flat sheets perpendicular to stress. Parent rock: shale."),
+
+    // SEDIMENTARY
+    SedRock("bauxite", "Clastic/chemical, earthy, reddish brown, composed of aluminum oxides—soft (~1–3 Mohs), heavy, often pisolitic (concentric circle things)."),
+    SedRock("breccia", "Coarse‑grained, angular clasts in finer matrix—sediment of nearby source (proximal depositoin); hardness varies with cement."),
+    SedRock("coal", "Organic, black, shiny to dull, layered—soft (<2 Mohs), burns, composed of compressed plant material."),
+    SedRock("conglomerate", "Coarse-grained, rounded clasts in matrix—hardness depends on cement; clast shapes indicate transport."),
+    SedRock("limestone", { mineralFamily: "carbonate", metamorphicIndex: false }),
+    SedRock("sandstone", "Medium-grained, gritty, colors vary from white to red/brown; hardness ~6–7 (quartz); clastic true to grain patterns."),
+    SedRock("shale", "Very fine-grained, fissile, clays and silts; layers split easily; hardness ~3."),
+    SedRock("chalk", "Very soft, fine-grained, white to light gray; composed mostly of microscopic coccoliths (calcareous algae); reacts vigorously with acid and easily marks paper."),
+    SedRock("coquina", "Coarse-grained, loosely cemented shell fragments; highly porous and light; reacts with acid; visually obvious shell debris makes ID easy."),
+    SedRock("travertine", "Crystalline to banded, dense; formed from calcium carbonate precipitation (typically in caves or hot springs); tan to white, reacts with acid, often shows layered banding or voids."),
+    SedRock("oolitic", "Fine to medium-grained, composed of small spherical ooids (<2 mm), smooth sandy feel; reacts with acid; typically tan to cream colored with visible ooids under a hand lens."),
+
+    // MINERALS
+    Mineral("talc", {mohsRock: true}),
+    Mineral("gypsum", { category: "sedimentary", mineralFamily: "sulfate", mohsRock: true }),
+    Mineral("calcite", {mohsRock: true}),
+    Mineral("fluorite", {mohsRock: true}),
+    Mineral("apatite", {mohsRock: true}),
+    Mineral("orthoclase", {mohsRock: true}),
+    Mineral("quartz", {mohsRock: true, mineralFamily: "silicate"}),
+    Mineral("corundum", {mohsRock: true}),
+    Mineral("diamond", {mohsRock: true}),
 ];
