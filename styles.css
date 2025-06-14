@@ -246,18 +246,6 @@ select[multiple] {
   border: 2px solid #e2e8f0;
 }
 
-#tags-container {
-  min-height: 38px; /* Reserve space so box doesn't jump */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: min-height 0.18s;
-  margin-bottom: 12px;
-  padding: 0 10px;
-  flex-wrap: wrap;
-}
-
 
 .tag {
   display: inline-block;
@@ -275,6 +263,14 @@ select[multiple] {
 .tag-metamorphic { background: var(--tag-metamorphic); color: #983e3e;}
 .tag-index { background: var(--tag-index); color: #9c6504;}
 .tag-mohs { background: var(--tag-mohs); color: #fff;}
+.tag-metalOre {
+  background-color: #cc7722;
+  color: white;
+}
+.tag-bowen {
+  background-color: #2277cc;
+  color: white;
+}
 
 
 /* Tag area always takes up 40px, whether tags are shown or not */
