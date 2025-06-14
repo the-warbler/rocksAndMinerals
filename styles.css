@@ -589,21 +589,38 @@ select[multiple] {
   border: none;
   cursor: pointer;
 }
+/* 3-per-row grid */
 #gallery-images {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
-  justify-content: center;
-  margin-top: 32px;
+  padding-bottom: 12px;
+  overflow-x: hidden;
 }
+
+/* Thumbnails */
 #gallery-images img {
-  max-width: 160px;
-  max-height: 120px;
+  width: 100%;
+  height: auto;
   object-fit: cover;
   border-radius: 8px;
   cursor: pointer;
   transition: transform 0.15s;
 }
 #gallery-images img:hover {
-  transform: scale(1.05);
+  transform: scale(1.03);
+}
+
+
+/* Zoomed image */
+#gallery-zoom {
+  display: none;        /* hidden until used */
+  max-width: 90vw;
+  max-height: 80vh;
+  object-fit: contain;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+#gallery-zoom.visible {
+  display: block;
 }

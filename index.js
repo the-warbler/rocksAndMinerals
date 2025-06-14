@@ -60,8 +60,10 @@ document.getElementById("modal-content")
 
         // ------- Gallery Modal Logic -------
 const galleryOverlay = document.getElementById("gallery-overlay");
-const galleryClose   = document.getElementById("gallery-close");
+const galleryContent = document.getElementById("gallery-content");
 const galleryImages  = document.getElementById("gallery-images");
+const zoomedImage    = document.getElementById("zoomed-image");
+const galleryClose   = document.getElementById("gallery-close");
 
 // Close handlers
 galleryClose.onclick = () => galleryOverlay.classList.add("hidden");
@@ -71,21 +73,36 @@ galleryOverlay.addEventListener("click", e => {
 document.getElementById("gallery-content")
         .addEventListener("click", e => e.stopPropagation());
 
-// Show gallery for a given rock name
+const galleryZoom = document.getElementById("gallery-zoom");
+
+// Open the grid of thumbnails
 function showGallery(rockName) {
-  galleryImages.innerHTML = "";       // clear
+  galleryZoom.classList.remove("visible");
+  galleryImages.style.display = "";  // ensure grid is shown
+  galleryImages.innerHTML = "";
   const count = imageCounts[rockName] || 1;
   for (let i = 1; i <= count; i++) {
-    const img = document.createElement("img");
-    img.src = `images/${rockName}${i}.jpg`;
-    img.alt = rockName + " " + i;
-    // if you want full-size on click, you could open another window or swap src
-    galleryImages.appendChild(img);
+    const thumb = document.createElement("img");
+    thumb.src = `images/${rockName}${i}.jpg`;
+    thumb.alt = `${rockName} ${i}`;
+    thumb.onclick = () => openZoom(thumb.src);
+    galleryImages.appendChild(thumb);
   }
   galleryOverlay.classList.remove("hidden");
 }
 
+// Show one image full-size inside the same modal
+function openZoom(src) {
+  galleryImages.style.display = "none";      // hide grid
+  galleryZoom.src = src;
+  galleryZoom.classList.add("visible");
+}
 
+// Click on zoomed image to go back to grid
+galleryZoom.addEventListener("click", () => {
+  galleryZoom.classList.remove("visible");
+  galleryImages.style.display = "";
+});
 // ======= Navigation Logic =======
 function showPage(pageName) {
   for (let key in pages) {
