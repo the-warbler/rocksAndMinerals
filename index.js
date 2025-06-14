@@ -58,6 +58,34 @@ document.getElementById("modal-content")
         .addEventListener("click", e => e.stopPropagation());
 
 
+        // ------- Gallery Modal Logic -------
+const galleryOverlay = document.getElementById("gallery-overlay");
+const galleryClose   = document.getElementById("gallery-close");
+const galleryImages  = document.getElementById("gallery-images");
+
+// Close handlers
+galleryClose.onclick = () => galleryOverlay.classList.add("hidden");
+galleryOverlay.addEventListener("click", e => {
+  if (e.target === galleryOverlay) galleryOverlay.classList.add("hidden");
+});
+document.getElementById("gallery-content")
+        .addEventListener("click", e => e.stopPropagation());
+
+// Show gallery for a given rock name
+function showGallery(rockName) {
+  galleryImages.innerHTML = "";       // clear
+  const count = imageCounts[rockName] || 1;
+  for (let i = 1; i <= count; i++) {
+    const img = document.createElement("img");
+    img.src = `images/${rockName}${i}.jpg`;
+    img.alt = rockName + " " + i;
+    // if you want full-size on click, you could open another window or swap src
+    galleryImages.appendChild(img);
+  }
+  galleryOverlay.classList.remove("hidden");
+}
+
+
 // ======= Navigation Logic =======
 function showPage(pageName) {
   for (let key in pages) {
@@ -186,30 +214,32 @@ function checkAnswer() {
   const feedback = document.getElementById("feedback");
   currentRock.attemptCount++;
   if (userGuess === currentRock.name.toLowerCase()) {
+    
     let message;
     if (currentRock.attemptCount === 1) {
       message = "Correct!";
-      totalCorrect++;
-      feedback.className = "correct";
     } else {
       message = `Correct after ${currentRock.attemptCount} tries`;
-      totalWrong++;
-      feedback.className = "correct";
     }
+    totalCorrect++;
+    feedback.className = "correct";
     feedback.innerText = message;
+
     currentRock.summary.result = message;
     sessionQueue.shift();
     updateScoreBoard();
     setTimeout(loadQuestion, 850);
+
   } else {
     if (currentRock.attemptCount === 1) {
       totalWrong++;
       updateScoreBoard();
     }
-    feedback.innerText = "Incorrect, try again.";
     feedback.className = "incorrect flash";
+    feedback.innerText = "Incorrect, try again.";
   }
 }
+
 function skipQuestion() {
   const currentRock = sessionQueue.shift();
   const feedback = document.getElementById("feedback");
@@ -316,9 +346,15 @@ function showSummary() {
     const itemDiv = document.createElement("div");
     itemDiv.className = "summary-item";
 
+   // existing:
     const imgElem = document.createElement("img");
-    imgElem.src = entry.image;
-    imgElem.alt = entry.name;
+    imgElem.src = `images/${rock.name}1.jpg`;
+    imgElem.alt = rock.name;
+
+    // new—open gallery on click
+    imgElem.style.cursor = "pointer";
+    imgElem.onclick = () => showGallery(rock.name);
+
 
     // Container for name and tags
     const nameTagsDiv = document.createElement("div");
@@ -416,9 +452,17 @@ function updateSearchResults() {
     let imgNum = 1;
     const card = document.createElement("div");
     card.className = "search-card";
+    // existing:
     const imgElem = document.createElement("img");
-    imgElem.src = `images/${rock.name}${imgNum}.jpg`;
+    imgElem.src = `images/${rock.name}1.jpg`;
     imgElem.alt = rock.name;
+
+    // new—open gallery on click
+    imgElem.style.cursor = "pointer";
+    imgElem.onclick = () => showGallery(rock.name);
+
+
+
     const infoDiv = document.createElement("div");
     infoDiv.className = "search-info";
     const nameElem = document.createElement("button");
